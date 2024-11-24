@@ -136,11 +136,11 @@ func (h *Host) Connect(term *sshd.Terminal) {
 		user.Send(message.NewAnnounceMsg(motd))
 	}
 
-	member, err := h.Join(user)
+	member, err := h.Join(user, term)
 	if err != nil {
 		// Try again...
 		id.SetName(fmt.Sprintf("Guest%d", count))
-		member, err = h.Join(user)
+		member, err = h.Join(user, term)
 	}
 	if err != nil {
 		logger.Errorf("[%s] Failed to join: %s", term.Conn.RemoteAddr(), err)

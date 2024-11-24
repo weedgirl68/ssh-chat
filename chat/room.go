@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/shazow/ssh-chat/chat/message"
 	"github.com/shazow/ssh-chat/internal/humantime"
 	"github.com/shazow/ssh-chat/set"
+	"github.com/shazow/ssh-chat/sshd"
 )
 
 const historyLen = 20
@@ -144,6 +146,7 @@ func (r *Room) HandleMsg(m message.Message) {
 					return // Skip announcements
 				}
 			}
+
 			user.Send(m)
 			return
 		})
@@ -171,7 +174,7 @@ func (r *Room) History(u *message.User) {
 }
 
 // Join the room as a user, will announce.
-func (r *Room) Join(u *message.User) (*Member, error) {
+func (r *Room) Join(u *message.User, term *sshd.Terminal) (*Member, error) {
 	// TODO: Check if closed
 	if u.ID() == "" {
 		return nil, ErrInvalidName
@@ -182,7 +185,11 @@ func (r *Room) Join(u *message.User) (*Member, error) {
 		return nil, err
 	}
 	// TODO: Remove user ID from sets, probably referring to a prior user.
-	r.History(u)
+	apiMode := strings.ToLower(term.Term()) == "bot"
+
+	if !apiMode {
+		r.History(u)
+	}
 	s := fmt.Sprintf("%s joined. (Connected: %d)", u.Name(), r.Members.Len())
 	r.Send(message.NewAnnounceMsg(s))
 	return member, nil
